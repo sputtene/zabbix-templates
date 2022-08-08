@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<zabbix_export>
+    <version>6.0</version>
+    <date>2022-08-08T16:20:29Z</date>
+    <groups>
+        <group>
+            <uuid>5039c3d7bb9f497c89e1a2e800cc23cc</uuid>
+            <name>Templates/Protocols</name>
+        </group>
+    </groups>
+    <templates>
+        <template>
+            <uuid>ec82db174f20480a9a148e644fc9a315</uuid>
+            <template>TLS Certificate validity</template>
+            <name>TLS Certificate validity</name>
+            <description>Monitors the Not After date of a TLS certificate. Needs a helper script on the server/proxy.
+
+Put comma-separated hostname:port pairs in the {$CERT.SERVICES} macro. If port is not specified, 443 is assumed.</description>
+            <groups>
+                <group>
+                    <name>Templates/Protocols</name>
+                </group>
+            </groups>
+            <discovery_rules>
+                <discovery_rule>
+                    <uuid>f0b0bdf0c7594df391ca4a6e9106369e</uuid>
+                    <name>Discover TLS services</name>
+                    <type>SCRIPT</type>
+                    <key>cert.services</key>
+                    <params>return JSON.stringify(
+  JSON.parse(value).services
+  .split(/,\s*/)
+  .map(function(host_port_raw) {
+    host_port = host_port_raw.split(':');
+    if (host_port.length === 1) host_port[1] = '443';
+    return { '{#HOST}': host_port[0], '{#PORT}': host_port[1] };
+  })
+);</params>
+                    <filter>
+                        <conditions>
+                            <condition>
+                                <macro>{#HOST}</macro>
+                                <value>FILL_THIS_IN</value>
+                                <operator>NOT_MATCHES_REGEX</operator>
+                                <formulaid>A</formulaid>
+                            </condition>
+                        </conditions>
+                    </filter>
+                    <description>Expand the value of the {$CERT.SERVICES} macro to Zabbix LLD JSON. Each entry will get its own TLS certificate validity monitoring.</description>
+                    <item_prototypes>
+                        <item_prototype>
+                            <uuid>84db80b0d434415b86b3f51b15156ed1</uuid>
+                            <name>{#HOST}:{#PORT} - Certificate validity period</name>
+                            <type>CALCULATED</type>
+                            <key>cert.validity.period[{#HOST},{#PORT}]</key>
+                            <value_type>FLOAT</value_type>
+                            <units>s</units>
+                            <params>last(//tls_cert_notafter.sh[{#HOST},{#PORT}])-now()</params>
+                            <description>The number of seconds before the notAfter timestamp in the certificate is reached</description>
+                            <trigger_prototypes>
+                                <trigger_prototype>
+                                    <uuid>6181c70570ba452882c4083f04b048e2</uuid>
+                                    <expression>nodata(/TLS Certificate validity/cert.validity.period[{#HOST},{#PORT}],1d)=1</expression>
+                                    <name>SSL certificate for {#HOST}:{#PORT} could not be retrieved for &gt; 1 day</name>
+                                    <opdata>Certificate is expired for {ITEM.LASTVALUE1}</opdata>
+                                    <priority>HIGH</priority>
+                                    <description>This alarm will automatically recover at most 1 hour after a valid certificate has been installed.</description>
+                                </trigger_prototype>
+                                <trigger_prototype>
+                                    <uuid>b452112ce140413f9fc287775dc9393a</uuid>
+                                    <expression>last(/TLS Certificate validity/cert.validity.period[{#HOST},{#PORT}])&lt;1d</expression>
+                                    <name>SSL certificate for {#HOST}:{#PORT} expires in &lt; 1 day</name>
+                                    <opdata>Certificate is expired for {ITEM.LASTVALUE1}</opdata>
+                                    <priority>HIGH</priority>
+                                    <description>This alarm will automatically recover at most 1 hour after a valid certificate has been installed.</description>
+                                    <dependencies>
+                                        <dependency>
+                                            <name>SSL certificate for {#HOST}:{#PORT} is expired</name>
+                                            <expression>last(/TLS Certificate validity/cert.validity.period[{#HOST},{#PORT}])&lt;0</expression>
+                                        </dependency>
+                                    </dependencies>
+                                </trigger_prototype>
+                                <trigger_prototype>
+                                    <uuid>d49fefda53d64b3ca321d42a7737b7d2</uuid>
+                                    <expression>last(/TLS Certificate validity/cert.validity.period[{#HOST},{#PORT}])&lt;7d</expression>
+                                    <name>SSL certificate for {#HOST}:{#PORT} expires in &lt; 7 days</name>
+                                    <opdata>Certificate is expired for {ITEM.LASTVALUE1}</opdata>
+                                    <priority>HIGH</priority>
+                                    <description>This alarm will automatically recover at most 1 hour after a valid certificate has been installed.</description>
+                                    <dependencies>
+                                        <dependency>
+                                            <name>SSL certificate for {#HOST}:{#PORT} expires in &lt; 1 day</name>
+                                            <expression>last(/TLS Certificate validity/cert.validity.period[{#HOST},{#PORT}])&lt;1d</expression>
+                                        </dependency>
+                                    </dependencies>
+                                </trigger_prototype>
+                                <trigger_prototype>
+                                    <uuid>516154cbc0aa4b788671dcc9da956545</uuid>
+                                    <expression>last(/TLS Certificate validity/cert.validity.period[{#HOST},{#PORT}])&lt;14d</expression>
+                                    <name>SSL certificate for {#HOST}:{#PORT} expires in &lt; 14 days</name>
+                                    <opdata>Certificate is expired for {ITEM.LASTVALUE1}</opdata>
+                                    <priority>AVERAGE</priority>
+                                    <description>This alarm will automatically recover at most 1 hour after a valid certificate has been installed.</description>
+                                    <dependencies>
+                                        <dependency>
+                                            <name>SSL certificate for {#HOST}:{#PORT} expires in &lt; 7 days</name>
+                                            <expression>last(/TLS Certificate validity/cert.validity.period[{#HOST},{#PORT}])&lt;7d</expression>
+                                        </dependency>
+                                    </dependencies>
+                                </trigger_prototype>
+                                <trigger_prototype>
+                                    <uuid>1bbb950a9d2d49a0942dbcccf2a7df1d</uuid>
+                                    <expression>last(/TLS Certificate validity/cert.validity.period[{#HOST},{#PORT}])&lt;30d</expression>
+                                    <name>SSL certificate for {#HOST}:{#PORT} expires in &lt; 30 days</name>
+                                    <opdata>Certificate is expired for {ITEM.LASTVALUE1}</opdata>
+                                    <priority>AVERAGE</priority>
+                                    <description>This alarm will automatically recover at most 1 hour after a valid certificate has been installed.</description>
+                                    <dependencies>
+                                        <dependency>
+                                            <name>SSL certificate for {#HOST}:{#PORT} expires in &lt; 14 days</name>
+                                            <expression>last(/TLS Certificate validity/cert.validity.period[{#HOST},{#PORT}])&lt;14d</expression>
+                                        </dependency>
+                                    </dependencies>
+                                </trigger_prototype>
+                                <trigger_prototype>
+                                    <uuid>8072a564bded433d8d355f609fda71c4</uuid>
+                                    <expression>last(/TLS Certificate validity/cert.validity.period[{#HOST},{#PORT}])&lt;0</expression>
+                                    <name>SSL certificate for {#HOST}:{#PORT} is expired</name>
+                                    <opdata>Certificate is expired for {ITEM.LASTVALUE1}</opdata>
+                                    <priority>DISASTER</priority>
+                                    <description>This alarm will automatically recover at most 1 hour after a valid certificate has been installed.</description>
+                                </trigger_prototype>
+                            </trigger_prototypes>
+                        </item_prototype>
+                        <item_prototype>
+                            <uuid>21ca4f426750428cacf49f2b899ca13d</uuid>
+                            <name>{#HOST}:{#PORT} - notAfter date</name>
+                            <type>EXTERNAL</type>
+                            <key>tls_cert_notafter.sh[{#HOST},{#PORT}]</key>
+                            <delay>0;1h/1-7,9:00-17:00</delay>
+                            <units>unixtime</units>
+                            <description>notAfter date in the TLS certificate</description>
+                            <tags>
+                                <tag>
+                                    <tag>application</tag>
+                                    <value>TLS certificate</value>
+                                </tag>
+                            </tags>
+                        </item_prototype>
+                    </item_prototypes>
+                    <parameters>
+                        <parameter>
+                            <name>services</name>
+                            <value>{$CERT.SERVICES}</value>
+                        </parameter>
+                    </parameters>
+                </discovery_rule>
+            </discovery_rules>
+            <macros>
+                <macro>
+                    <macro>{$CERT.SERVICES}</macro>
+                    <value>FILL_THIS_IN</value>
+                </macro>
+            </macros>
+        </template>
+    </templates>
+</zabbix_export>
