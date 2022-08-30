@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<zabbix_export>
+    <version>5.4</version>
+    <date>2022-08-30T18:29:16Z</date>
+    <groups>
+        <group>
+            <uuid>846977d1dfed4968bc5f8bdb363285bc</uuid>
+            <name>Templates/Operating systems</name>
+        </group>
+    </groups>
+    <templates>
+        <template>
+            <uuid>29db707ebf7940d1960a2be22e22de26</uuid>
+            <template>Linux Debian-Ubuntu by Zabbix agent active</template>
+            <name>Linux Debian-Ubuntu by Zabbix agent active</name>
+            <groups>
+                <group>
+                    <name>Templates/Operating systems</name>
+                </group>
+            </groups>
+            <items>
+                <item>
+                    <uuid>f6d37d499c02499a968689f1c7f18cf4</uuid>
+                    <name>Available software updates (all)</name>
+                    <type>ZABBIX_ACTIVE</type>
+                    <key>ubuntu.upgrades.all</key>
+                    <delay>5m</delay>
+                    <history>1w</history>
+                    <trends>0</trends>
+                    <value_type>TEXT</value_type>
+                    <tags>
+                        <tag>
+                            <tag>Application</tag>
+                            <value>Software</value>
+                        </tag>
+                    </tags>
+                    <triggers>
+                        <trigger>
+                            <uuid>9dddfbb7aa374b57840a54c0dc5e7a2d</uuid>
+                            <expression>length(last(/Linux Debian-Ubuntu by Zabbix agent active/ubuntu.upgrades.all))&gt;0</expression>
+                            <name>Software updates are available</name>
+                            <priority>WARNING</priority>
+                        </trigger>
+                    </triggers>
+                </item>
+                <item>
+                    <uuid>8e931ed05aa649748ab98d891568a92c</uuid>
+                    <name>Available software updates (security)</name>
+                    <type>ZABBIX_ACTIVE</type>
+                    <key>ubuntu.upgrades.security</key>
+                    <delay>5m</delay>
+                    <history>1w</history>
+                    <trends>0</trends>
+                    <value_type>TEXT</value_type>
+                    <tags>
+                        <tag>
+                            <tag>Application</tag>
+                            <value>Software</value>
+                        </tag>
+                    </tags>
+                    <triggers>
+                        <trigger>
+                            <uuid>de8c1e5113a940a781ab48c3c100226c</uuid>
+                            <expression>length(last(/Linux Debian-Ubuntu by Zabbix agent active/ubuntu.upgrades.security))&gt;0</expression>
+                            <name>Software security updates are available</name>
+                            <priority>AVERAGE</priority>
+                        </trigger>
+                    </triggers>
+                </item>
+                <item>
+                    <uuid>5a785e82e5f446e3a863313eac28733d</uuid>
+                    <name>Reboot required by operating system</name>
+                    <type>ZABBIX_ACTIVE</type>
+                    <key>vfs.file.exists[/run/reboot-required]</key>
+                    <description>https://askubuntu.com/a/1337721
+
+According to Debian policy section 9.12: &quot;Programs can signal that a reboot is required by touching /run/reboot-required.&quot;
+
+By testing for the existence of this file, we can create a non-urgent alarm trigger to notify when the OS decides that a reboot is required.</description>
+                    <triggers>
+                        <trigger>
+                            <uuid>23146e2ef2a44a638796f6420021dc5c</uuid>
+                            <expression>last(/Linux Debian-Ubuntu by Zabbix agent active/vfs.file.exists[/run/reboot-required])=1</expression>
+                            <name>A reboot is required by the operating system</name>
+                            <priority>WARNING</priority>
+                        </trigger>
+                    </triggers>
+                </item>
+            </items>
+        </template>
+    </templates>
+</zabbix_export>
