@@ -9,17 +9,23 @@ the distribution-specific commands.
 
 # Setup
 
-Import the templates into Zabbix.
+## On the host
 
 Put the appropriate UserParameter file (one of the files ending in `.conf`) on
 the monitored server in `/etc/zabbix/zabbix_agentd.d` (or `/etc/zabbix/zabbix_agent2.d`
-if you're using Agent2) and restart the Zabbix agent to pick up the new
-UserParameters.
+if you're using Agent2).
+Restart the Zabbix agent to pick up the new UserParameters.
 
 Make sure `jq` (a command line JSON processing tool) is installed on the host;
 this tool is used by the UserParameter commands.
 
-Link the appropriate template to the host in the Zabbix frontend.
+
+## On the Zabbix server
+
+Import the templates into Zabbix.
+
+Link the appropriate template (either regular agent (passive) or active agent)
+to the host in the Zabbix frontend.
 
 
 # Zabbix configuration
