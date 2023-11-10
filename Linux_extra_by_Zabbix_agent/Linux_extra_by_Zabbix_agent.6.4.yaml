@@ -1,0 +1,111 @@
+zabbix_export:
+  version: '6.4'
+  template_groups:
+    - uuid: 846977d1dfed4968bc5f8bdb363285bc
+      name: 'Templates/Operating systems'
+  templates:
+    - uuid: b0b9c6c874e94d3e9e76e03fb0afda72
+      template: 'Linux extra by Zabbix agent'
+      name: 'Linux extra by Zabbix agent'
+      description: |
+        Extra checks for Linux hosts.
+        
+        The items are distribution independent, the UserParameters implementing the logic are different for each distribution.
+      vendor:
+        name: Off by One
+        version: 6.4-0
+      groups:
+        - name: 'Templates/Operating systems'
+      items:
+        - uuid: aba837b7d4974a3ca73f4ff2f4c832f4
+          name: 'Available software updates'
+          key: os.packages.updates.all
+          trends: '0'
+          value_type: TEXT
+          preprocessing:
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 8h
+          triggers:
+            - uuid: af996ccd29aa4251accf62fc72438916
+              expression: 'last(/Linux extra by Zabbix agent/os.packages.updates.all)<>""'
+              name: 'Software updates available'
+              priority: WARNING
+              dependencies:
+                - name: 'Software security updates available'
+                  expression: 'last(/Linux extra by Zabbix agent/os.packages.updates.security)<>""'
+        - uuid: c23f17500bb64702892b5e29a2820cbf
+          name: 'Available software security updates'
+          key: os.packages.updates.security
+          trends: '0'
+          value_type: TEXT
+          preprocessing:
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 8h
+          triggers:
+            - uuid: 80afd8ac073c42e2931825fb911ec056
+              expression: 'last(/Linux extra by Zabbix agent/os.packages.updates.security)<>""'
+              name: 'Software security updates available'
+              priority: AVERAGE
+        - uuid: b0a1634d0f0d4571877acfb7eb82759b
+          name: 'System needs reboot'
+          type: DEPENDENT
+          key: os.reboot_required
+          delay: '0'
+          valuemap:
+            name: 'Boolean to Yes/No'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.need_reboot
+          master_item:
+            key: os.reboot_required.raw
+          tags:
+            - tag: Application
+              value: 'Package manager'
+        - uuid: c2bcb9bbce0340feb7a475cec4efcc45
+          name: 'Reboot required'
+          key: os.reboot_required.raw
+          history: '0'
+          trends: '0'
+          value_type: TEXT
+          preprocessing:
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1h
+          tags:
+            - tag: component
+              value: raw
+        - uuid: 29641ad5c437466ca6df1b77b7b5b533
+          name: 'Reboot reason'
+          type: DEPENDENT
+          key: os.reboot_required.reason
+          delay: '0'
+          trends: '0'
+          value_type: TEXT
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.reason
+          master_item:
+            key: os.reboot_required.raw
+          tags:
+            - tag: Application
+              value: 'Package manager'
+      valuemaps:
+        - uuid: a83d74e0f4204857ab703e5aa2140c44
+          name: 'Boolean to Yes/No'
+          mappings:
+            - value: '0'
+              newvalue: 'No'
+            - value: '1'
+              newvalue: 'Yes'
+  triggers:
+    - uuid: 60c42f051b11490ea97f6b46af834bf7
+      expression: |
+        last(/Linux extra by Zabbix agent/os.reboot_required)<>0
+        and length(last(/Linux extra by Zabbix agent/os.reboot_required.reason))>=0
+      name: 'System reboot required'
+      opdata: 'Reboot reason: {ITEM.LASTVALUE2}'
+      priority: HIGH

@@ -1,0 +1,122 @@
+zabbix_export:
+  version: '6.4'
+  template_groups:
+    - uuid: 846977d1dfed4968bc5f8bdb363285bc
+      name: 'Templates/Operating systems'
+  templates:
+    - uuid: 38f4da2d2c0c4b5daf14404cc6b268c1
+      template: 'Linux extra by Zabbix agent active'
+      name: 'Linux extra by Zabbix agent active'
+      description: |
+        Extra checks for Linux hosts.
+        
+        The items are distribution independent, the UserParameters implementing the logic are different for each distribution.
+      vendor:
+        name: Off by One
+        version: 6.4-0
+      groups:
+        - name: 'Templates/Operating systems'
+      items:
+        - uuid: a50704fdfd964230abd61938b08b8fde
+          name: 'Available software updates'
+          type: ZABBIX_ACTIVE
+          key: os.packages.updates.all
+          trends: '0'
+          value_type: TEXT
+          preprocessing:
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 8h
+          tags:
+            - tag: Application
+              value: 'Package manager'
+          triggers:
+            - uuid: 964b5073fe564b45a969230f157c91fd
+              expression: 'last(/Linux extra by Zabbix agent active/os.packages.updates.all)<>""'
+              name: 'Software updates available'
+              priority: WARNING
+              dependencies:
+                - name: 'Software security updates available'
+                  expression: 'last(/Linux extra by Zabbix agent active/os.packages.updates.security)<>""'
+        - uuid: ad96f361db2944258680c16bfd4d937b
+          name: 'Available software security updates'
+          type: ZABBIX_ACTIVE
+          key: os.packages.updates.security
+          trends: '0'
+          value_type: TEXT
+          preprocessing:
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 8h
+          tags:
+            - tag: Application
+              value: 'Package manager'
+          triggers:
+            - uuid: 94c88a222b614f59b47db366f56ba688
+              expression: 'last(/Linux extra by Zabbix agent active/os.packages.updates.security)<>""'
+              name: 'Software security updates available'
+              priority: AVERAGE
+        - uuid: 7b8497f448394597b1ebbced21b376e7
+          name: 'System needs reboot'
+          type: DEPENDENT
+          key: os.reboot_required
+          delay: '0'
+          valuemap:
+            name: 'Boolean to Yes/No'
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.need_reboot
+          master_item:
+            key: os.reboot_required.raw
+          tags:
+            - tag: Application
+              value: 'Package manager'
+        - uuid: 060d9110a2c74aed9df7a55cb3993ac8
+          name: 'Reboot required'
+          type: ZABBIX_ACTIVE
+          key: os.reboot_required.raw
+          history: '0'
+          trends: '0'
+          value_type: TEXT
+          preprocessing:
+            - type: DISCARD_UNCHANGED_HEARTBEAT
+              parameters:
+                - 1h
+          tags:
+            - tag: Application
+              value: 'Package manager'
+            - tag: component
+              value: raw
+        - uuid: e49dd781d42340b58c5b77f48e51a3c9
+          name: 'Reboot reason'
+          type: DEPENDENT
+          key: os.reboot_required.reason
+          delay: '0'
+          trends: '0'
+          value_type: TEXT
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - $.reason
+          master_item:
+            key: os.reboot_required.raw
+          tags:
+            - tag: Application
+              value: 'Package manager'
+      valuemaps:
+        - uuid: a2f6dcc007ae4494be1c9d83c80e1ac0
+          name: 'Boolean to Yes/No'
+          mappings:
+            - value: '0'
+              newvalue: 'No'
+            - value: '1'
+              newvalue: 'Yes'
+  triggers:
+    - uuid: 25316815f61a4005bcc61b99c37b926e
+      expression: |
+        last(/Linux extra by Zabbix agent active/os.reboot_required)<>0
+        and length(last(/Linux extra by Zabbix agent active/os.reboot_required.reason))>=0
+      name: 'System reboot required'
+      opdata: 'Reboot reason: {ITEM.LASTVALUE2}'
+      priority: AVERAGE
